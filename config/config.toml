@@ -1,0 +1,7 @@
+[serial]
+port = "COM3"          # Serial port (e.g., "/dev/ttyUSB0" on Linux or "COM3" on Windows)
+baud_rate = 115200
+
+[robot]
+home_pos = [90, 90, 90, 90, 90]  # Neutral/default angles for all 5 joints
+

@@ -8,7 +8,7 @@ int  Motor_Pins[NUM_JOINTS] = {};
 int  Encoder_Pins[NUM_JOINTS] = {};
 
 // Creating the Servomotors variable, thinked to store servomotors obj
-int Servomotors[NUM_JOINTS];
+Servo Servomotors[NUM_JOINTS];
 
 // Creating basics variables for motors control
 int Motors_Desired_Pos[NUM_JOINTS] = {};
@@ -65,7 +65,7 @@ void loop() {
     delay(2000);
     pause++;
     // if it is the pause has been active, tehn i need to reset the loop timer
-    prevTime = micros()
+    prevTime = micros();
   }
 
   // If there are incoming packets from PC (Non-blocking check)

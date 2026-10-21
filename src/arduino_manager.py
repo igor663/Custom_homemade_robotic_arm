@@ -46,7 +46,7 @@ class ArduinoManager:
     def send_command(self, target_angles: list[int]):
         """
         Transmits a new set of joint target angles (0-180 deg) to Arduino.
-        Temporarily pauses telemetry reception to avoid serial port collisions.
+        Packs each target as a signed 16-bit integer ('h') matching Arduino's int16_t.
         """
         if len(target_angles) != NUM_JOINTS:
             raise ValueError(f"Expected {NUM_JOINTS} angles, received {len(target_angles)}")
@@ -59,7 +59,10 @@ class ArduinoManager:
 
         # 2. Transmit packet under serial lock protection
         with self.serial_lock:
-            send_size = self.link.tx_obj(clamped_targets, format=STRUCT_FORMAT)
+            send_size = 0
+            for val in clamped_targets:
+                # Pack each joint angle sequentially as 16-bit integer ('h')
+                send_size = self.link.tx_obj(val, start_pos=send_size, val_type_override='h')
             self.link.send(send_size)
 
         # 3. Resume telemetry reception
@@ -78,12 +81,16 @@ class ArduinoManager:
 
             with self.serial_lock:
                 if self.link.available():
-                    # Unpack incoming packet into telemetry array
-                    data = self.link.rx_obj(obj_type=list, format=STRUCT_FORMAT)
+                    # Unpack 5 x int16_t (5 joints * 2 bytes = 10 bytes) using format 'h'
+                    data = self.link.rx_obj(
+                        obj_type=list,
+                        obj_byte_size=NUM_JOINTS * 2,
+                        list_format='h'
+                    )
                     with self.data_lock:
                         self.current_pos = data
-                elif self.link.status < 0:
-                    # Packet drop or CRC validation error
+                # Use .value to safely compare Enum in Python 3.12+
+                elif self.link.status.value < 0:
                     pass
 
             time.sleep(0.01)  # ~100 Hz polling period

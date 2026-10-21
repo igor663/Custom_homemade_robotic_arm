@@ -13,8 +13,8 @@ except ImportError:
 
 from arduino_manager import ArduinoManager, NUM_JOINTS
 
-CONFIG_FILE = Path(__file__).parent / "config.toml"
-
+CONFIG_FILE = Path(__file__).resolve().parent.parent / "config" / "config.toml"
+print(f"Loading configuration from: {CONFIG_FILE}")
 
 def load_config(file_path: Path) -> dict:
     """Loads and validates parameters from the TOML configuration file."""
@@ -27,7 +27,7 @@ def load_config(file_path: Path) -> dict:
 # --- CONFIGURATION ---
 OUTPUT_CSV = "joint_calibration_data.csv"
 # Angular positions to calibrate
-TEST_ANGLES = [0, 45, 90, 135, 180]
+TEST_ANGLES = []
 SETTLING_TIME = 1.8       # Seconds to wait for physical servo stabilization
 SAMPLES_TO_AVERAGE = 15   # Number of samples to average (filters out ADC noise)
 
@@ -36,6 +36,7 @@ config = load_config(CONFIG_FILE)
 SERIAL_PORT = config["serial"]["port"]         
 BAUD_RATE = config["serial"]["baud_rate"]
 HOME_POS = config["robot"]["home_pos"]
+JOINTS_LIMITS = config["robot"]["joints_limits"]
 
 def main():
     manager = ArduinoManager(port=SERIAL_PORT, baud=BAUD_RATE)
@@ -59,6 +60,8 @@ def main():
                 print(f"\n==============================")
                 print(f"     CALIBRATING JOINT {joint_id}")
                 print(f"==============================")
+
+                TEST_ANGLES = list(range(JOINTS_LIMITS[joint_id][0], JOINTS_LIMITS[joint_id][1], int((JOINTS_LIMITS[joint_id][1] - JOINTS_LIMITS[joint_id][0]) / NUM_JOINTS)))  # Example: 10 steps between min and max   
 
                 for angle in TEST_ANGLES:
                     # Isolate movement to the joint under test; keep remaining joints at Home

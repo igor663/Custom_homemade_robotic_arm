@@ -1,7 +1,43 @@
 [serial]
-port = "COM3"          # Serial port (e.g., "/dev/ttyUSB0" on Linux or "COM3" on Windows)
+port = "/dev/ttyACM0"          # Serial port (e.g., "/dev/ttyUSB0" on Linux or "COM3" on Windows)
 baud_rate = 115200
 
 [robot]
-home_pos = [90, 90, 90, 90, 90]  # Neutral/default angles for all 5 joints
+home_pos = [90, 90, 100, 90, 90]  # Neutral/default angles for all 5 joints
+joints_limits = [[ 5,175],        # Joints limits to avoid contac with chassy or cables.
+                 [10,150],
+                 [ 5,175],
+                 [ 5,175],
+                 [ 5,175],]
 
+[robot_model]
+urdf_path = "models/robot.urdf"
+ee_frame_name = "end_effector_link"  # end-effector name in the URDF
+
+[pinocchio]
+# Parametri per la Cinematica Inversa (Damped Least Squares)
+iterations = 100
+tolerance = 1e-4
+norm_step_limit = 0.1
+damping = 0.05
+adaptive_damping = true
+lambda_min = 0.01
+lambda_max = 0.5
+det_threshold = 1e-3
+
+
+[trajectory]
+# trajectry parameters
+trajectory_type = "target"    # "target" (punto-punto liscio)
+t_sampling = 0.02             # 0.02s = 50 Hz (sincronizzato con Arduino)
+t_goto = 3.0                  # Tempo di avvicinamento (secondi)
+t_horizon = 2.0               # Tempo di stazionamento sul target (secondi)
+
+[target]
+# target coordinates relative to the control space
+target_joint_deg = [90.0, 45.0, 60.0, 90.0, 90.0]
+target_cartesian_m = [0.15, 0.0, 0.20] # in METRI [X, Y, Z]
+
+[controller]
+controller_type = "KINEMATIC" "PDG" # Chose the type of controller you want to use for managing the robot PDG, IMP o AI. 
+control_space = "cartesian"   # "joint" oppure "cartesian"

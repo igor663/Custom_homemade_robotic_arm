@@ -1,0 +1,14 @@
+{
+    "configuration": "default",
+    "documentId": "09908b447da691219852d40a",
+    "documentMicroversion": "e13ebd59c8e9385f4ce599d9",
+    "documentVersion": "b2c34355c158e0d073aa41d6",
+    "elementId": "00fa8a06908b67c2147f15d5",
+    "fullConfiguration": "default",
+    "id": "MuVa/4enmqE8Lc6t8",
+    "isStandardContent": false,
+    "name": "gripper1 - Claw-2 <1>",
+    "partId": "JFH",
+    "suppressed": false,
+    "type": "Part"
+}

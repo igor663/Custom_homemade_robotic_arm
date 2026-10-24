@@ -1,0 +1,19 @@
+{
+ "url":"https://cad.onshape.com/documents/879c90c7a3ad5e82c1046beb/w/8c6c7f67da323e414ce72e95/e/a48b8b25282c905c2129cdb6",
+ "assemblyName": "Custom_homemade_robot",
+ "outputFormat": "urdf",
+ "output_filename": "Custom_homemade_robot",
+ "robotName": "robot",
+ "package_name":"",
+ "addDummyBaseLink": true,
+
+ "merge_stls": "true",
+ "simplify_stls": true,
+ "max_stl_size": 0.1,
+
+ "ignore":[
+    "encoder-1",
+    "servomotore-9",
+    "porta motore-4"
+    ]
+}

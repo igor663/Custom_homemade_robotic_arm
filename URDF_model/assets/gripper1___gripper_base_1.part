@@ -1,0 +1,14 @@
+{
+    "configuration": "default",
+    "documentId": "09908b447da691219852d40a",
+    "documentMicroversion": "e13ebd59c8e9385f4ce599d9",
+    "documentVersion": "b2c34355c158e0d073aa41d6",
+    "elementId": "1eeecc664b0821880b34d711",
+    "fullConfiguration": "default",
+    "id": "MeOx/iqo83xn2d6xY",
+    "isStandardContent": false,
+    "name": "gripper1 - Gripper_base-1 <1>",
+    "partId": "JFH",
+    "suppressed": false,
+    "type": "Part"
+}

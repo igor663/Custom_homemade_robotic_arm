@@ -1,0 +1,14 @@
+{
+    "configuration": "default",
+    "documentId": "09908b447da691219852d40a",
+    "documentMicroversion": "e13ebd59c8e9385f4ce599d9",
+    "documentVersion": "b2c34355c158e0d073aa41d6",
+    "elementId": "6c3497182330cdba2d3d84a7",
+    "fullConfiguration": "default",
+    "id": "MU5ZCG5k8uPyu2U6k",
+    "isStandardContent": false,
+    "name": "gripper1 - Connector-1 <2>",
+    "partId": "JFH",
+    "suppressed": false,
+    "type": "Part"
+}

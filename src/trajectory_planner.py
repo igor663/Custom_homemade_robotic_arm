@@ -150,7 +150,6 @@ class TrajectoryPlanner:
 
             # Calculate Phase Timings
             self.t_end_approach = self.t_goto
-
             self.t_end_horizon = self.t_end_approach + self.t_horizon
             self.t_total = self.t_end_horizon + self.t_goto
             self.t_end_return = self.t_total
@@ -162,7 +161,6 @@ class TrajectoryPlanner:
             if self.control_space == 'joint':
                 self.q_target = self.target.copy()   
                 self.x_target = np.array(self.pinocchio.forward_kinematics(self.q_target))
-
 
                 print(f"    Joint Target: q={np.round(self.q_target, 3)}")
                 print(f"    Cart. Target (FK): x={np.round(self.x_target, 3)}")

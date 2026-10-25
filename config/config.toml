@@ -17,7 +17,7 @@ ee_frame_name = "ee_frame"  # end-effector name in the URDF
 [pinocchio]
 # Parametri per la Cinematica Inversa (Damped Least Squares)
 iterations = 100
-tolerance = 1e-4
+tolerance = 1e-3
 norm_step_limit = 0.1
 damping = 0.05
 adaptive_damping = true

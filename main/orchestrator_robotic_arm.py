@@ -164,21 +164,57 @@ class Orchestrator:
 
             return control_input
 
+
+    def model_to_servo(self, q_model_rad: np.ndarray) -> list[int]:
+            """
+            Convert angles coming form Pinocchio (radiants,set URDF/DH)
+            in the corresponding angels for the Arduino (deg 0-180).
+            """
+            q_deg = np.rad2deg(q_model_rad)
+            
+            # Real = URDF * direction + offset
+            servo_angles = q_deg * self.manager.joint_directions + self.manager.joint_offsets_deg
+            
+            return servo_angles.astype(int).tolist()
+
+    def servo_to_model(self, servo_angles_deg: list[int] | np.ndarray) -> np.ndarray:
+        """
+        Convert the actual position read from the motors (degrees 0-180)
+        into the joint space for Pinocchio (radians).
+        """
+        servo_arr = np.array(servo_angles_deg, dtype=float)
+        
+        # Inverse formula: URDF = (Real - offset) / direction
+        q_deg = (servo_arr - self.manager.joint_offsets_deg) / self.manager.joint_directions
+        
+        return np.deg2rad(q_deg)
+
+
     def run(self):
-        """Executes the full trajectory lifecycle."""
+        """Executes the full trajectory lifecycle with real sensory feedback."""
         try:
+            # Connect to Arduino if hardware is active
             if self.arduino:
                 self.arduino.connect()
                 print("Moving robot to Initial Home Position...")
-                self.arduino.send_command(self.manager.home_pos_deg.astype(int).tolist())
-                time.sleep(2.0)
+                # Send the calibrated physical home pose to the servos
+                home_servo_cmd = self.model_to_servo(self.manager.home_pos_rad)
+                self.arduino.send_command(home_servo_cmd)
+                time.sleep(2.0)  # Wait for physical settling
 
             # Establish initial state (q0 in rad, x0 in meters)
-            q0 = self.manager.home_pos_rad.copy()
+            if self.arduino:
+                # Read initial actual pose directly from potentiometer telemetry
+                raw_feedback = self.arduino.get_current_positions()
+                q0 = self.servo_to_model(raw_feedback)
+            else:
+                q0 = self.manager.home_pos_rad.copy()
+
             x0 = self.pinocchio.forward_kinematics(q0)
             if x0 is None:
                 raise RuntimeError("Failed to compute initial forward kinematics (x0).")
 
+            # Pre-compute trajectory timings and waypoints
             print("\nPlanning trajectory...")
             t_total = self.planner.plan_trajectory(q0, x0)
             if t_total is None or t_total <= 0:
@@ -191,15 +227,34 @@ class Orchestrator:
             print(f"Executing Trajectory: Total Duration = {t_total:.2f}s | Steps = {num_steps} | Rate = {1/dt:.1f}Hz")
             print("=" * 60)
 
+            # State initialization for loop execution
             current_q = q0.copy()
             current_q_dot = np.zeros_like(current_q)
+            prev_q = q0.copy()
 
             # --- REAL-TIME CONTROL LOOP (50 Hz) ---
             for step in range(num_steps):
                 loop_start_time = time.perf_counter()
                 time_instance = step * dt
 
-                # 1. Current Jacobian
+                # 0. Read sensory feedback from Arduino and estimate actual joint velocities
+                if self.arduino:
+                    # Read telemetry vector from feedback potentiometers
+                    telemetry = self.arduino.get_current_positions()
+
+                    # Convert raw physical servo feedback to Pinocchio model space (rad)
+                    current_q = self.servo_to_model(telemetry)
+
+                    # Estimate actual joint velocity using backward finite differences
+                    raw_q_dot = (current_q - prev_q) / dt
+
+                    # First-order exponential smoothing filter to suppress ADC noise
+                    alpha = 0.7  # Smoothing factor (0.0 = full filter, 1.0 = raw)
+                    current_q_dot = alpha * raw_q_dot + (1.0 - alpha) * current_q_dot
+
+                    prev_q = current_q.copy()
+
+                # 1. Current Jacobian evaluated at actual configuration
                 J_k = self.pinocchio.frame_jacobian(current_q)
                 if J_k is None:
                     print(f"[ERROR] Jacobian evaluation failed at step {step}. Halting.")
@@ -223,35 +278,29 @@ class Orchestrator:
 
                 # 5. The DM996 RC Servos accept only position commands. Therefore, we need to convert the computed command into a position command. 
                 # If the controller provides a position command, we use it directly. If it provides a velocity command, we integrate it to get the next position.
-
                 if cmd_pos is not None:
                     q_target_rad = cmd_pos
-                    
+
                 elif cmd_vel is not None:
-                    current_q_dot = cmd_vel.copy()
-                    # Integrate velocity: q_next = q + q_dot * dt
+                    # Integrate velocity starting from actual measured joint position: q_next = q_act + q_dot * dt
                     q_target_rad = current_q + cmd_vel * dt
 
                 elif cmd_eff is not None:
                     # For torque-based controllers we need to implement a torque-to-position conversion, which is not trivial and requires dynamic modeling. For now, we will log a warning.
-                     raise RuntimeError("[ERROR] Torque command received at step {step}, but torque-to-position conversion is not implemented.")
+                    raise RuntimeError(f"[ERROR] Torque command received at step {step}, but torque-to-position conversion is not implemented.")
                 else:
-                     raise RuntimeError("[ERROR] No valid command from controller at step {step}.")
+                    raise RuntimeError(f"[ERROR] No valid command from controller at step {step}.")
 
+                # 6. Unit conversion: Radians -> Degrees (including hardware calibration offsets)
+                servo_cmd = self.model_to_servo(q_target_rad)
 
-                # 6. Unit conversion: Radians -> Degrees
-                q_cmd_deg = np.rad2deg(q_target_rad)
-
-                # 7. Safety constraints: Clamp to physical robot joint limits
-                q_safe_deg = np.clip(q_cmd_deg, self.manager.lower_limit_deg, self.manager.upper_limit_deg)
-                q_safe_deg = np.clip(q_safe_deg, 0.0, 180.0)
-
-                # 8. Send packet to Arduino
+                # 7. Send packet to Arduino
                 if self.arduino:
-                    self.arduino.send_command(q_safe_deg.astype(int).tolist())
-
-                # Update state estimate for next iteration
-                current_q = np.deg2rad(q_safe_deg)
+                    self.arduino.send_command(servo_cmd)
+                else:
+                    # In dry-run mode, simulate state propagation via numerical integration
+                    current_q_dot = (q_target_rad - current_q) / dt
+                    current_q = q_target_rad.copy()
 
                 # Progress logging every 10 steps (~0.2s)
                 if step % 10 == 0 or step == num_steps - 1:
@@ -259,7 +308,7 @@ class Orchestrator:
                         f"t={time_instance:5.2f}s | "
                         f"Target XYZ: {np.round(state['x_des'], 3)} | "
                         f"Error XYZ: {np.round(control_input['err_x'], 4)} | "
-                        f"Cmd Deg: {q_safe_deg.astype(int).tolist()}"
+                        f"Cmd Servo Deg: {servo_cmd}"
                     )
 
                 # Maintain 50 Hz deterministic timing
@@ -276,14 +325,13 @@ class Orchestrator:
             if self.arduino:
                 print("Safely returning robot to Home position...")
                 try:
-                    self.arduino.send_command(self.manager.home_pos_deg.astype(int).tolist())
+                    home_servo_cmd = self.model_to_servo(self.manager.home_pos_rad)
+                    self.arduino.send_command(home_servo_cmd)
                     time.sleep(1.0)
                 except Exception:
                     pass
                 self.arduino.disconnect()
             print("[Orchestrator] Shutdown complete.")
-
-
 
 def main():
     parser = argparse.ArgumentParser(description="5-DOF Robotic Arm Orchestrator")

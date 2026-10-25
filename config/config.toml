@@ -10,6 +10,13 @@ joints_limits = [[ 5,175],        # Joints limits to avoid contac with chassy or
                  [ 5,175],
                  [ 5,175],]
 
+# Rotation direction (1.0 = concorde)
+joint_directions = [1.0, 1.0, 1.0, 1.0, 1.0]
+
+# Offset to add to the pinocchio computed degree to obtain the corresponding angles of the real robot
+joint_offsets_deg = [90.0, 180.0, 90.0, 90.0, 90.0]
+
+
 [robot_model]
 urdf_path = "URDF_model/Custom_homemade_robot.urdf"
 ee_frame_name = "ee_frame"  # end-effector name in the URDF

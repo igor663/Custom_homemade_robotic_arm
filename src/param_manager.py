@@ -67,10 +67,15 @@ class ParameterManager:
         limits_deg = np.array(robot_cfg.get("joints_limits", [[0, 180]] * self.num_joints), dtype=float)
         self.lower_limit_deg = limits_deg[:, 0]
         self.upper_limit_deg = limits_deg[:, 1]
-        
+
+        # Read joint offsets and directions for Arduino mapping (degrees)
+        self.joint_offsets_deg = np.array(robot_cfg.get("joint_offsets_deg", [90.0, 180.0, 90.0, 90.0, 90.0]), dtype=float)
+        self.joint_directions = np.array(robot_cfg.get("joint_directions", [1.0, 1.0, 1.0, 1.0, 1.0]), dtype=float)
+                
         # Required by PinocchioWrapper (manager.lower_limit, manager.upper_limit in radians)
         self.lower_limit = np.deg2rad(self.lower_limit_deg)
         self.upper_limit = np.deg2rad(self.upper_limit_deg)
+
 
         # ---------------------------------------------------------
         # 3. ROBOT MODEL & URDF [robot_model]

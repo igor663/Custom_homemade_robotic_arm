@@ -48,7 +48,7 @@
         <mesh filename="/assets/merged/link_1_visual.stl"/>
       </geometry>
       <material name="link_1_parts_material">
-        <color rgba="0.710359 0.700156 0.697563 1"/>
+        <color rgba="0.676703 0.676703 0.676703 0.966025"/>
       </material>
     </visual>
     <collision>
@@ -72,7 +72,7 @@
         <mesh filename="/assets/merged/link_2_visual.stl"/>
       </geometry>
       <material name="link_2_parts_material">
-        <color rgba="0.971418 0.956341 0.955789 0.971679"/>
+        <color rgba="0.957882 0.949546 0.942253 0.958143"/>
       </material>
     </visual>
     <collision>
@@ -96,7 +96,7 @@
         <mesh filename="/assets/merged/link_3_visual.stl"/>
       </geometry>
       <material name="link_3_parts_material">
-        <color rgba="0.486088 0.557844 0.473581 1"/>
+        <color rgba="0.465806 0.542712 0.462957 0.979476"/>
       </material>
     </visual>
     <collision>
@@ -120,7 +120,7 @@
         <mesh filename="/assets/merged/link_4_visual.stl"/>
       </geometry>
       <material name="link_4_parts_material">
-        <color rgba="0.709014 0.674767 0.650853 0.98644"/>
+        <color rgba="0.676867 0.652366 0.630927 0.953988"/>
       </material>
     </visual>
     <collision>
@@ -154,13 +154,28 @@
       </geometry>
     </collision>
   </link>
+  <!-- Frame ee (dummy link + fixed joint) -->
+  <link name="ee">
+    <origin xyz="0 0 0" rpy="0 -0 0"/>
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="1e-9"/>
+      <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+    </inertial>
+  </link>
+  <joint name="ee_frame" type="fixed">
+    <origin xyz="0.0100555 -0.176742 -0.0318922" rpy="-1.5708 0 1.5708"/>
+    <parent link="link5"/>
+    <child link="ee"/>
+    <axis xyz="0 0 0"/>
+  </joint>
   <!-- Joint from link_4 to link5 -->
   <joint name="joint5" type="revolute">
     <origin xyz="-0.0335 0.01925 -0.0965711" rpy="1.5708 -0 -1.5708"/>
     <parent link="link_4"/>
     <child link="link5"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-1.55334" upper="1.58825"/>
+    <limit effort="10" velocity="10" lower="-1.5708" upper="1.5708"/>
   </joint>
   <!-- Joint from link_3 to link_4 -->
   <joint name="joint4" type="revolute">
@@ -168,7 +183,7 @@
     <parent link="link_3"/>
     <child link="link_4"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-1.55334" upper="1.58825"/>
+    <limit effort="10" velocity="10" lower="-1.5708" upper="1.5708"/>
   </joint>
   <!-- Joint from link_2 to link_3 -->
   <joint name="joint3" type="revolute">

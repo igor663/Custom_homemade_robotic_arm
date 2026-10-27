@@ -108,9 +108,8 @@ class InverseKinematicsControl:
 
             cmd_pos = None
             cmd_eff = None
-            ctrl_log_data = {}
 
-            return cmd_pos, cmd_vel, cmd_eff, ctrl_log_data
+            return cmd_pos, cmd_vel, cmd_eff
 
         except Exception as e:
             print(f"[ERROR] InverseKinematicsController 'compute_law()' at step {k}: {e}")

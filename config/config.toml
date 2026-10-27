@@ -2,6 +2,10 @@
 port = "/dev/ttyACM0"          # Serial port (e.g., "/dev/ttyUSB0" on Linux or "COM3" on Windows)
 baud_rate = 115200
 
+[logs]
+log_path = "logs"
+log_file_name = "trajectory_log.csv"
+
 [robot]
 home_pos = [90, 90, 100, 90, 90]  # Neutral/default angles for all 5 joints
 joints_limits = [[ 5,175],        # Joints limits to avoid contac with chassy or cables.
@@ -41,7 +45,7 @@ t_horizon = 2.0               # Tempo di stazionamento sul target (secondi)
 
 [target]
 # target coordinates relative to the control space
-target_joint = [90.0, 45.0, 60.0, 90.0, 90.0] # degrees
+target_joint = [90, 90, 100, 90, 45] # degrees
 target_cartesian = [0.15, 0.0, 0.20] # meters[X, Y, Z]
 
 [controller]

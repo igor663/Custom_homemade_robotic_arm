@@ -87,6 +87,10 @@ class ParameterManager:
         self.urdf_absolute_path = (self.project_root / rel_urdf_path).resolve()
         self.urdf_ee = model_cfg.get("ee_frame_name", "end_effector_link")
 
+        log_cfg = self._raw_config.get("logs", {})
+        self.log_path = self.project_root / log_cfg.get("log_path")
+        self.log_file_name = log_cfg.get("log_file_name")
+        
         # ---------------------------------------------------------
         # 4. PINOCCHIO & IK PARAMETERS [pinocchio]
         # ---------------------------------------------------------
@@ -138,6 +142,7 @@ if __name__ == "__main__":
     print("\n--- PARAMETER MANAGER VERIFICATION ---")
     print(f"Project root:         {manager.project_root}")
     print(f"URDF path:            {manager.urdf_absolute_path}")
+    print(f"Log path:             {manager.log_path}")
     print(f"End-Effector frame:   {manager.urdf_ee}")
     print(f"Home Position (rad):  {np.round(manager.home_pos_rad, 3)}")
     print(f"Lower Limits (rad):   {np.round(manager.lower_limit, 3)}")

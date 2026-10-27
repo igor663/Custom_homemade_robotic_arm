@@ -11,6 +11,7 @@ SRC_DIR = PROJECT_ROOT / "src"
 if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
+from data_logger import DataLogger
 from param_manager import ParameterManager
 from wrapper_pinocchio import PinocchioWrapper
 from trajectory_planner import TrajectoryPlanner
@@ -73,6 +74,11 @@ class Orchestrator:
             self.arduino = ArduinoManager(port=self.manager.serial_port, baud=self.manager.baud_rate)
         else:
             print("[INFO] DRY-RUN MODE ACTIVE: Serial communication skipped.")
+
+        # 6. DATA LOGGING
+        log_file = self.manager.log_path / self.manager.log_file_name
+        self.logger = DataLogger(filename=str(log_file), num_joints=self.manager.num_joints)
+
 
     # The Orchestrator is the dynamic state coordinator. It is the only point in the architecture where all the following come together:
     #    - The real data from the sensors (q_act, q_dot_act from the Arduino).
@@ -274,7 +280,7 @@ class Orchestrator:
                 )
 
                 # 4. Computes the next joint command based on the desired state and current state.
-                cmd_pos, cmd_vel, cmd_eff, ctrl_log = self.controller.compute_law(control_input, step)
+                cmd_pos, cmd_vel, cmd_eff = self.controller.compute_law(control_input, step)
 
                 # 5. The DM996 RC Servos accept only position commands. Therefore, we need to convert the computed command into a position command. 
                 # If the controller provides a position command, we use it directly. If it provides a velocity command, we integrate it to get the next position.
@@ -302,7 +308,18 @@ class Orchestrator:
                     current_q_dot = (q_target_rad - current_q) / dt
                     current_q = q_target_rad.copy()
 
-                # Progress logging every 10 steps (~0.2s)
+                # 8. Log step data, saving in memory
+                self.logger.log_step(
+                    time_instance=time_instance,
+                    step=step,
+                    control_input=control_input,
+                    cmd_pos=cmd_pos,
+                    cmd_vel=cmd_vel,
+                    cmd_eff=cmd_eff,
+                    servo_cmd=servo_cmd
+                )
+
+                # Progress console logging every 10 steps (~0.2s)
                 if step % 10 == 0 or step == num_steps - 1:
                     print(
                         f"t={time_instance:5.2f}s | "
@@ -331,6 +348,10 @@ class Orchestrator:
                 except Exception:
                     pass
                 self.arduino.disconnect()
+
+            # Flush buffered data to CSV file on disk
+            self.logger.save_to_csv()
+            print("[Orchestrator] Shutdown complete.")
             print("[Orchestrator] Shutdown complete.")
 
 def main():
